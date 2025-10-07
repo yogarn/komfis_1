@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Textured Room – Fixed Version</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #111;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      .hint {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #ddd;
+        font-family: system-ui, sans-serif;
+        font-size: 14px;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.35);
+        padding: 6px 10px;
+        border-radius: 8px;
+        user-select: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="hint">
+      Drag = rotate · Scroll = zoom · Right-drag = pan · R = reset camera
+    </div>
+
+    <!-- Three.js dan OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+      // === 1) Scene ===
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x222222);
+
+      // === 2) Camera ===
+      const camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        100
+      );
+      const defaultPos = new THREE.Vector3(0, 1.5, 4);
+      camera.position.copy(defaultPos);
+      camera.lookAt(0, 1, 0);
+
+      // === 3) Renderer ===
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // === 4) OrbitControls ===
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.target.set(0, 1, 0);
+
+      // === 5) Lights ===
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      const point = new THREE.PointLight(0xffffff, 1.2, 100);
+      point.position.set(0, 2.8, 2);
+      scene.add(ambient, point);
+
+      // === 6) Texture Loader ===
+      const loader = new THREE.TextureLoader();
+
+      const floorTex = loader.load("WoodFloor047_1K-JPG_Color.jpg");
+      const wallTex = loader.load("Bricks085_1K-JPG_Color.jpg");
+      const ceilingTex = loader.load("OfficeCeiling001_1K-JPG_Color.jpg");
+
+      floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
+      wallTex.wrapS = wallTex.wrapT = THREE.RepeatWrapping;
+      ceilingTex.wrapS = ceilingTex.wrapT = THREE.RepeatWrapping;
+
+      floorTex.repeat.set(2, 2);
+      wallTex.repeat.set(1.5, 1);
+      ceilingTex.repeat.set(1, 1);
+
+      // === 7) Materials ===
+      const matFloor = new THREE.MeshStandardMaterial({ map: floorTex });
+      const matWall = new THREE.MeshStandardMaterial({ map: wallTex });
+      const matCeil = new THREE.MeshStandardMaterial({ map: ceilingTex });
+
+      // === 8) Geometry dan Mesh ===
+      const W = 4;
+      const H = 3;
+      const D = 6;
+
+      // Floor
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), matFloor);
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = 0;
+      scene.add(floor);
+
+      // Ceiling
+      const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, D), matCeil);
+      ceil.rotation.x = Math.PI / 2;
+      ceil.position.y = H;
+      scene.add(ceil);
+
+      // Back Wall
+      const back = new THREE.Mesh(new THREE.PlaneGeometry(W, H), matWall);
+      back.position.set(0, H / 2, -D / 2);
+      back.rotation.y = Math.PI;
+      scene.add(back);
+
+      // Front Wall
+      const front = new THREE.Mesh(new THREE.PlaneGeometry(W, H), matWall);
+      front.position.set(0, H / 2, D / 2);
+      scene.add(front);
+
+      // Left Wall
+      const left = new THREE.Mesh(new THREE.PlaneGeometry(D, H), matWall);
+      left.rotation.y = Math.PI / 2;
+      left.position.set(-W / 2, H / 2, 0);
+      scene.add(left);
+
+      // Right Wall
+      const right = new THREE.Mesh(new THREE.PlaneGeometry(D, H), matWall);
+      right.rotation.y = -Math.PI / 2;
+      right.position.set(W / 2, H / 2, 0);
+      scene.add(right);
+
+      // === 9) Render Loop ===
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // === 10) Responsif ===
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // === 11) Reset Kamera ===
+      window.addEventListener("keydown", (e) => {
+        if (e.key.toLowerCase() === "r") {
+          camera.position.copy(defaultPos);
+          controls.target.set(0, 1, 0);
+          controls.update();
+        }
+      });
+    </script>
+  </body>
+</html>
